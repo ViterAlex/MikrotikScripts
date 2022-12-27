@@ -161,6 +161,7 @@ do {
   :local name [system identity get name]
   :log info ("Bot. PowerOn. " . [:tostr $lastTimeSeen] . ". after=$after. before=$before");
   :local msgText ("*$name*%0APowered off ".($lastTimeSeen->0)." at ".($lastTimeSeen->1)."%0A");
+  :set $msgText ($msgText."Powered on at ".($dt->0)." ".($dt->1)."%0A");
   :set $msgText ($msgText."Stay offline during ".[$convertSeconds ($after-$before)]);
   $send $msgText;
   :set $firstRun "true";
