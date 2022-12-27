@@ -81,6 +81,42 @@
   :return ($ds*24*60*60 + $ts + y2k - [/system clock get gmt-offset]);
 }
 
+# check if system time is sync
+:local TimeIsSync do={
+  :if ([ /system ntp client get enabled ] = true) do={
+    :do {
+      :if ([ /system ntp client get status ] = "synchronized") do={
+        :return true;
+      }
+    } on-error={
+      :if ([ :typeof [ /system ntp client get last-adjustment ] ] = "time") do={
+        :return true;
+      }
+    }
+    :return false;
+  }
+
+  :if ([ /ip cloud get ddns-enabled ] = true && [ / ip cloud get update-time ] = true) do={
+    :if ([ :typeof [ / ip cloud get public-address ] ] = "ip") do={
+      :return true;
+    }
+    :return false;
+  }
+  :return true;
+}
+
+:while ([$TimeIsSync]=false) do={
+  :if ([ :len [ / system script find where name="rotate-ntp" ] ] > 0 && \
+         ([ / system resource get uptime ] % (180 * 1000000000)) = 0s) do={
+      :do {
+        / system script run rotate-ntp;
+      } on-error={
+        :log debug "Running rotate-ntp failed.";
+      }
+    }
+  :delay 500ms;
+}
+
 #last time of script execution. {date;time}
 :local lastTimeSeen;
 #file to save last time of script execution between reboots
@@ -102,12 +138,14 @@ do {
   /file set $fileName contents=$dt
 } on-error={
   #if error, i.e. file doesn't exist, create it.
-/file print file=$fileName
-:delay 5s
-#save date & time
-/file set $fileName contents=$dt
+  /file print file=$fileName
+  :delay 5s
+  #save date & time
+  /file set $fileName contents=$dt
   return ""
 }
+
+
 :global firstRun;
 :if (!any $firstRun) do={ 
   #time before reboot
