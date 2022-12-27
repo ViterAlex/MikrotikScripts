@@ -148,16 +148,10 @@ do {
 
 :global firstRun;
 :if (!any $firstRun) do={ 
-  #time before reboot
+  #time before reboot saved in file
   :local before [:tonum [$EpochTime ($lastTimeSeen->0) ($lastTimeSeen->1)]];
   #time after reboot
-  #if time after reboot less than before, it means sntp client has not updated yet.
-  #So wait for it
   :local after [:tonum [$EpochTime]];
-  :while ($after < $before) do={
-    :delay 1m;
-    :set $after [:tonum [$EpochTime]]
-  }
   :local name [system identity get name]
   :log info ("Bot. PowerOn. " . [:tostr $lastTimeSeen] . ". after=$after. before=$before");
   :local msgText ("*$name*%0APowered off ".($lastTimeSeen->0)." at ".($lastTimeSeen->1)."%0A");
